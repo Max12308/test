@@ -188,9 +188,8 @@ document.addEventListener("keydown", e => {
     if (now - lastR < 400) {
 
       // 🔥 GLOBALER RESET IN FIREBASE
-      runTransaction(votesRef, () => {
-        return { 1: 0, 2: 0, 3: 0 };
-      });
+     import { set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
 
       // 🔓 lokale Sperre auf DIESEM Gerät aufheben
       localStorage.removeItem("hasVoted");
@@ -213,5 +212,6 @@ document.querySelectorAll("[data-vote]").forEach(btn => {
     vote(video);
   });
 });
+
 
 
