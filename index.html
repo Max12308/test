@@ -2,58 +2,50 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>Online Voting Demo</title>
+  <title>Clip Voting – Versprecher</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h1>🌍 Online Voting – Live Demo</h1>
+  <h1>🎬 Clip Voting – Versprecher</h1>
+  <p class="hint">Reveal: <b>G G G</b> · Reset: <b>R R</b></p>
 
-<button onclick="vote(1)">Vote Video 1</button>
-<span id="v1">0</span>
-<br><br>
+  <div class="video-box" id="video-1">
+    <video controls>
+      <source src="video1.mp4" type="video/mp4">
+    </video>
+    <button onclick="vote(1)">Dafür stimmen</button>
+    <p>Stimmen: <span id="votes1">0</span></p>
+  </div>
 
-<button onclick="vote(2)">Vote Video 2</button>
-<span id="v2">0</span>
-<br><br>
+  <div class="video-box" id="video-2">
+    <video controls>
+      <source src="video2.mp4" type="video/mp4">
+    </video>
+    <button onclick="vote(2)">Dafür stimmen</button>
+    <p>Stimmen: <span id="votes2">0</span></p>
+  </div>
 
-<button onclick="vote(3)">Vote Video 3</button>
-<span id="v3">0</span>
+  <div class="video-box" id="video-3">
+    <video controls>
+      <source src="video3.mp4" type="video/mp4">
+    </video>
+    <button onclick="vote(3)">Dafür stimmen</button>
+    <p>Stimmen: <span id="votes3">0</span></p>
+  </div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import {
-    getDatabase,
-    ref,
-    onValue,
-    runTransaction
-  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+  <!-- COUNTDOWN -->
+  <div id="countdown-screen">
+    <div id="countdown-number">3</div>
+  </div>
 
-  // 🔗 DEINE URL (schon eingesetzt)
-  const firebaseConfig = {
-    databaseURL: "https://test-688e4-default-rtdb.europe-west1.firebasedatabase.app"
-  };
+  <!-- WINNER SCREEN -->
+  <div id="winner-screen">
+    <h1 id="winner-title">🏆 Gewinner</h1>
+    <video id="winner-video" controls autoplay></video>
+    <button onclick="closeWinner()">Schließen</button>
+  </div>
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-  const votesRef = ref(db, "votes");
-
-  // 🔄 LIVE-UPDATES (Echtzeit!)
-  onValue(votesRef, (snapshot) => {
-    const data = snapshot.val() || {1:0,2:0,3:0};
-    document.getElementById("v1").textContent = data[1] || 0;
-    document.getElementById("v2").textContent = data[2] || 0;
-    document.getElementById("v3").textContent = data[3] || 0;
-  });
-
-  // 🗳️ VOTEN (atomar, sicher)
-  window.vote = function(video) {
-    runTransaction(votesRef, (current) => {
-      if (!current) current = {1:0,2:0,3:0};
-      current[video] = (current[video] || 0) + 1;
-      return current;
-    });
-  };
-</script>
-
+  <script src="script.js"></script>
 </body>
 </html>
