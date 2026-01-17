@@ -7,7 +7,8 @@ import {
   getDatabase,
   ref,
   onValue,
-  runTransaction
+  runTransaction,
+  set
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
@@ -17,23 +18,19 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 🔒 Eigener Pfad für DEIN Projekt (nicht die Demo!)
+// 🔒 Eigener Pfad (getrennt von der Demo!)
 const votesRef = ref(db, "clipVoting/versprecher/votes");
 
 // =======================
 // STATE
 // =======================
 
-// Stimmen kommen aus Firebase
 let votes = { 1: 0, 2: 0, 3: 0 };
-
-// 1 Vote pro Browser
 let hasVoted = localStorage.getItem("hasVoted") === "true";
-
 let currentWinner = null;
 
 // =======================
-// LIVE UPDATES (🔥 DAS IST DER KERN)
+// LIVE UPDATES (Firebase → UI)
 // =======================
 
 onValue(votesRef, snapshot => {
@@ -58,8 +55,6 @@ function vote(video) {
   localStorage.setItem("hasVoted", "true");
 }
 
-window.vote = vote; // wichtig für onclick im HTML
-
 // =======================
 // UI
 // =======================
@@ -69,9 +64,9 @@ function updateUI() {
   document.getElementById("votes2").textContent = votes[2];
   document.getElementById("votes3").textContent = votes[3];
 
-  if (hasVoted) {
-    document.querySelectorAll("button").forEach(b => b.disabled = true);
-  }
+  document.querySelectorAll("button").forEach(b => {
+    b.disabled = hasVoted;
+  });
 
   calculateWinner();
 }
@@ -136,12 +131,12 @@ function startCountdown() {
   let c = 3;
   num.textContent = c;
 
-  const i = setInterval(() => {
+  const interval = setInterval(() => {
     c--;
     if (c > 0) {
       num.textContent = c;
     } else {
-      clearInterval(i);
+      clearInterval(interval);
       screen.style.display = "none";
       showWinner();
     }
@@ -171,7 +166,7 @@ function showWinner() {
   document.getElementById("winner-screen").style.display = "flex";
 }
 
-window.closeWinner = function () {
+window.closeWinner = () => {
   document.getElementById("winner-screen").style.display = "none";
 };
 
@@ -186,12 +181,10 @@ document.addEventListener("keydown", e => {
     const now = Date.now();
 
     if (now - lastR < 400) {
+      // 🔥 Firebase komplett zurücksetzen
+      set(votesRef, { 1: 0, 2: 0, 3: 0 });
 
-      // 🔥 GLOBALER RESET IN FIREBASE
-     import { set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-
-      // 🔓 lokale Sperre auf DIESEM Gerät aufheben
+      // 🔓 lokale Sperre aufheben
       localStorage.removeItem("hasVoted");
       hasVoted = false;
 
@@ -203,15 +196,11 @@ document.addEventListener("keydown", e => {
 });
 
 // =======================
-// BUTTONS VERKABELN (statt onclick)
+// BUTTONS VERKABELN
 // =======================
 
 document.querySelectorAll("[data-vote]").forEach(btn => {
   btn.addEventListener("click", () => {
-    const video = parseInt(btn.dataset.vote);
-    vote(video);
+    vote(parseInt(btn.dataset.vote));
   });
 });
-
-
-
