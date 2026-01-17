@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Online Voting Demo</title>
+</head>
+<body>
+
+<h1>🌍 Online Voting – Live Demo</h1>
+
+<button onclick="vote(1)">Vote Video 1</button>
+<span id="v1">0</span>
+<br><br>
+
+<button onclick="vote(2)">Vote Video 2</button>
+<span id="v2">0</span>
+<br><br>
+
+<button onclick="vote(3)">Vote Video 3</button>
+<span id="v3">0</span>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import {
+    getDatabase,
+    ref,
+    onValue,
+    runTransaction
+  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+  // 🔗 DEINE URL (schon eingesetzt)
+  const firebaseConfig = {
+    databaseURL: "https://test-688e4-default-rtdb.europe-west1.firebasedatabase.app"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const votesRef = ref(db, "votes");
+
+  // 🔄 LIVE-UPDATES (Echtzeit!)
+  onValue(votesRef, (snapshot) => {
+    const data = snapshot.val() || {1:0,2:0,3:0};
+    document.getElementById("v1").textContent = data[1] || 0;
+    document.getElementById("v2").textContent = data[2] || 0;
+    document.getElementById("v3").textContent = data[3] || 0;
+  });
+
+  // 🗳️ VOTEN (atomar, sicher)
+  window.vote = function(video) {
+    runTransaction(votesRef, (current) => {
+      if (!current) current = {1:0,2:0,3:0};
+      current[video] = (current[video] || 0) + 1;
+      return current;
+    });
+  };
+</script>
+
+</body>
+</html>
