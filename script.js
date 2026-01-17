@@ -18,47 +18,50 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 🔒 Struktur:
+// Struktur:
 // clipVoting/versprecher/round
 // clipVoting/versprecher/votes
-const baseRef = ref(db, "clipVoting/versprecher");
-const votesRef = ref(db, "clipVoting/versprecher/votes");
-const roundRef = ref(db, "clipVoting/versprecher/round");
+const basePath = "clipVoting/versprecher";
+const votesRef = ref(db, `${basePath}/votes`);
+const roundRef = ref(db, `${basePath}/round`);
 
 // =======================
-// STATE
+// STATE (ROBUST)
 // =======================
 
+// Firebase-State
 let votes = { 1: 0, 2: 0, 3: 0 };
 let currentRound = 0;
-let lastVotedRound = parseInt(localStorage.getItem("lastVotedRound")) || -1;
-let hasVoted = false;
+
+// Local State
+let lastVotedRound = Number(localStorage.getItem("lastVotedRound"));
+if (Number.isNaN(lastVotedRound)) lastVotedRound = -1;
+
+// WICHTIG: default = true (sicher), wird gleich korrekt gesetzt
+let hasVoted = true;
+
 let currentWinner = null;
 
 // =======================
 // LIVE UPDATES
 // =======================
 
-// Votes live
+// 🔁 Votes
 onValue(votesRef, snapshot => {
   votes = snapshot.val() || { 1: 0, 2: 0, 3: 0 };
   updateUI();
 });
 
-// Round live
+// 🔁 Runde (entscheidend!)
 onValue(roundRef, snapshot => {
   currentRound = snapshot.val() ?? 0;
 
-  // 🔑 WICHTIG: sauber prüfen, ob User in DIESER Runde schon gevotet hat
-  if (lastVotedRound === currentRound) {
-    hasVoted = true;
-  } else {
-    hasVoted = false;
-  }
+  // 🔒 ZENTRALE LOGIK:
+  // Wenn ich in dieser Runde schon gevotet habe → gesperrt
+  hasVoted = (lastVotedRound === currentRound);
 
   updateUI();
 });
-
 
 // =======================
 // VOTING
@@ -75,7 +78,9 @@ function vote(video) {
 
   hasVoted = true;
   lastVotedRound = currentRound;
-  localStorage.setItem("lastVotedRound", currentRound);
+  localStorage.setItem("lastVotedRound", String(currentRound));
+
+  updateUI(); // sofort sperren
 }
 
 // =======================
@@ -87,8 +92,8 @@ function updateUI() {
   document.getElementById("votes2").textContent = votes[2];
   document.getElementById("votes3").textContent = votes[3];
 
-  document.querySelectorAll("button").forEach(b => {
-    b.disabled = hasVoted;
+  document.querySelectorAll("button[data-vote]").forEach(btn => {
+    btn.disabled = hasVoted;
   });
 
   calculateWinner();
@@ -205,10 +210,10 @@ document.addEventListener("keydown", e => {
 
     if (now - lastR < 400) {
 
-      // neue Runde starten
+      // 🔄 neue Runde
       set(roundRef, currentRound + 1);
 
-      // Stimmen zurücksetzen
+      // 🔄 Stimmen zurücksetzen
       set(votesRef, { 1: 0, 2: 0, 3: 0 });
 
       alert("Neue Voting-Runde gestartet.");
@@ -227,4 +232,3 @@ document.querySelectorAll("[data-vote]").forEach(btn => {
     vote(parseInt(btn.dataset.vote));
   });
 });
-
