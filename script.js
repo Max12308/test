@@ -49,13 +49,16 @@ onValue(votesRef, snapshot => {
 onValue(roundRef, snapshot => {
   currentRound = snapshot.val() ?? 0;
 
-  // neue Runde → wieder abstimmen erlaubt
-  if (lastVotedRound !== currentRound) {
+  // 🔑 WICHTIG: sauber prüfen, ob User in DIESER Runde schon gevotet hat
+  if (lastVotedRound === currentRound) {
+    hasVoted = true;
+  } else {
     hasVoted = false;
   }
 
   updateUI();
 });
+
 
 // =======================
 // VOTING
@@ -224,3 +227,4 @@ document.querySelectorAll("[data-vote]").forEach(btn => {
     vote(parseInt(btn.dataset.vote));
   });
 });
+
