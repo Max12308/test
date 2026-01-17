@@ -192,3 +192,14 @@ document.addEventListener("keydown", e => {
     lastR = now;
   }
 });
+// =======================
+// BUTTONS VERKABELN (statt onclick)
+// =======================
+
+document.querySelectorAll("[data-vote]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const video = parseInt(btn.dataset.vote);
+    vote(video);
+  });
+});
+
