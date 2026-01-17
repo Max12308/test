@@ -176,7 +176,7 @@ window.closeWinner = function () {
 };
 
 // =======================
-// RESET: R R (nur lokal)
+// ADMIN RESET (GLOBAL): R R
 // =======================
 
 let lastR = 0;
@@ -184,14 +184,25 @@ let lastR = 0;
 document.addEventListener("keydown", e => {
   if (e.key.toLowerCase() === "r") {
     const now = Date.now();
+
     if (now - lastR < 400) {
+
+      // 🔥 GLOBALER RESET IN FIREBASE
+      runTransaction(votesRef, () => {
+        return { 1: 0, 2: 0, 3: 0 };
+      });
+
+      // 🔓 lokale Sperre auf DIESEM Gerät aufheben
       localStorage.removeItem("hasVoted");
       hasVoted = false;
-      location.reload();
+
+      alert("Voting wurde global zurückgesetzt.");
     }
+
     lastR = now;
   }
 });
+
 // =======================
 // BUTTONS VERKABELN (statt onclick)
 // =======================
@@ -202,4 +213,5 @@ document.querySelectorAll("[data-vote]").forEach(btn => {
     vote(video);
   });
 });
+
 
