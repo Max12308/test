@@ -18,23 +18,42 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 🔒 Eigener Pfad (getrennt von der Demo!)
+// 🔒 Struktur:
+// clipVoting/versprecher/round
+// clipVoting/versprecher/votes
+const baseRef = ref(db, "clipVoting/versprecher");
 const votesRef = ref(db, "clipVoting/versprecher/votes");
+const roundRef = ref(db, "clipVoting/versprecher/round");
 
 // =======================
 // STATE
 // =======================
 
 let votes = { 1: 0, 2: 0, 3: 0 };
-let hasVoted = localStorage.getItem("hasVoted") === "true";
+let currentRound = 0;
+let lastVotedRound = parseInt(localStorage.getItem("lastVotedRound")) || -1;
+let hasVoted = false;
 let currentWinner = null;
 
 // =======================
-// LIVE UPDATES (Firebase → UI)
+// LIVE UPDATES
 // =======================
 
+// Votes live
 onValue(votesRef, snapshot => {
   votes = snapshot.val() || { 1: 0, 2: 0, 3: 0 };
+  updateUI();
+});
+
+// Round live
+onValue(roundRef, snapshot => {
+  currentRound = snapshot.val() ?? 0;
+
+  // neue Runde → wieder abstimmen erlaubt
+  if (lastVotedRound !== currentRound) {
+    hasVoted = false;
+  }
+
   updateUI();
 });
 
@@ -52,7 +71,8 @@ function vote(video) {
   });
 
   hasVoted = true;
-  localStorage.setItem("hasVoted", "true");
+  lastVotedRound = currentRound;
+  localStorage.setItem("lastVotedRound", currentRound);
 }
 
 // =======================
@@ -131,12 +151,12 @@ function startCountdown() {
   let c = 3;
   num.textContent = c;
 
-  const interval = setInterval(() => {
+  const i = setInterval(() => {
     c--;
     if (c > 0) {
       num.textContent = c;
     } else {
-      clearInterval(interval);
+      clearInterval(i);
       screen.style.display = "none";
       showWinner();
     }
@@ -181,14 +201,14 @@ document.addEventListener("keydown", e => {
     const now = Date.now();
 
     if (now - lastR < 400) {
-      // 🔥 Firebase komplett zurücksetzen
+
+      // neue Runde starten
+      set(roundRef, currentRound + 1);
+
+      // Stimmen zurücksetzen
       set(votesRef, { 1: 0, 2: 0, 3: 0 });
 
-      // 🔓 lokale Sperre aufheben
-      localStorage.removeItem("hasVoted");
-      hasVoted = false;
-
-      alert("Voting wurde global zurückgesetzt.");
+      alert("Neue Voting-Runde gestartet.");
     }
 
     lastR = now;
@@ -196,7 +216,7 @@ document.addEventListener("keydown", e => {
 });
 
 // =======================
-// BUTTONS VERKABELN
+// BUTTONS
 // =======================
 
 document.querySelectorAll("[data-vote]").forEach(btn => {
