@@ -3,17 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <title>Clip Voting – Versprecher</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- DESIGN -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
   <h1>🎬 Clip Voting – Versprecher</h1>
-  <p class="hint">Reveal: <b>G G G</b> · Reset: <b>R R</b></p>
+  <p class="hint">
+    Stimme einmal ab · Reveal mit <b>G G G</b> · Reset mit <b>R R</b>
+  </p>
 
+  <!-- VIDEOS -->
   <div class="video-box" id="video-1">
     <video controls>
       <source src="video1.mp4" type="video/mp4">
     </video>
+
     <button onclick="vote(1)">Dafür stimmen</button>
     <p>Stimmen: <span id="votes1">0</span></p>
   </div>
@@ -22,6 +29,7 @@
     <video controls>
       <source src="video2.mp4" type="video/mp4">
     </video>
+
     <button onclick="vote(2)">Dafür stimmen</button>
     <p>Stimmen: <span id="votes2">0</span></p>
   </div>
@@ -30,22 +38,25 @@
     <video controls>
       <source src="video3.mp4" type="video/mp4">
     </video>
+
     <button onclick="vote(3)">Dafür stimmen</button>
     <p>Stimmen: <span id="votes3">0</span></p>
   </div>
 
-  <!-- COUNTDOWN -->
+  <!-- COUNTDOWN OVERLAY -->
   <div id="countdown-screen">
     <div id="countdown-number">3</div>
   </div>
 
   <!-- WINNER SCREEN -->
   <div id="winner-screen">
-    <h1 id="winner-title">🏆 Gewinner</h1>
+    <h1>🏆 Gewinner</h1>
     <video id="winner-video" controls autoplay></video>
     <button onclick="closeWinner()">Schließen</button>
   </div>
 
-  <script src="script.js"></script>
+  <!-- SCRIPT (WICHTIG: module!) -->
+  <script type="module" src="script.js"></script>
+
 </body>
 </html>
