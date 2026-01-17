@@ -1,20 +1,68 @@
-let votes = JSON.parse(localStorage.getItem("votes")) || {1:0,2:0,3:0};
+// =======================
+// FIREBASE SETUP
+// =======================
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getDatabase,
+  ref,
+  onValue,
+  runTransaction
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+  databaseURL: "https://test-688e4-default-rtdb.europe-west1.firebasedatabase.app"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// 🔒 Eigener Pfad für DEIN Projekt (nicht die Demo!)
+const votesRef = ref(db, "clipVoting/versprecher/votes");
+
+// =======================
+// STATE
+// =======================
+
+// Stimmen kommen aus Firebase
+let votes = { 1: 0, 2: 0, 3: 0 };
+
+// 1 Vote pro Browser
 let hasVoted = localStorage.getItem("hasVoted") === "true";
+
 let currentWinner = null;
 
-updateUI();
+// =======================
+// LIVE UPDATES (🔥 DAS IST DER KERN)
+// =======================
+
+onValue(votesRef, snapshot => {
+  votes = snapshot.val() || { 1: 0, 2: 0, 3: 0 };
+  updateUI();
+});
+
+// =======================
+// VOTING
+// =======================
 
 function vote(video) {
   if (hasVoted) return;
 
-  votes[video]++;
+  runTransaction(votesRef, current => {
+    if (!current) current = { 1: 0, 2: 0, 3: 0 };
+    current[video] = (current[video] || 0) + 1;
+    return current;
+  });
+
   hasVoted = true;
-
-  localStorage.setItem("votes", JSON.stringify(votes));
   localStorage.setItem("hasVoted", "true");
-
-  updateUI();
 }
+
+window.vote = vote; // wichtig für onclick im HTML
+
+// =======================
+// UI
+// =======================
 
 function updateUI() {
   document.getElementById("votes1").textContent = votes[1];
@@ -28,8 +76,13 @@ function updateUI() {
   calculateWinner();
 }
 
+// =======================
+// WINNER LOGIK
+// =======================
+
 function calculateWinner() {
   const max = Math.max(votes[1], votes[2], votes[3]);
+
   if (max === 0) {
     currentWinner = null;
     return;
@@ -43,9 +96,12 @@ function calculateWinner() {
   currentWinner = winners.length === 1 ? winners[0] : null;
 }
 
-// Reveal mit G G G
+// =======================
+// REVEAL: G G G
+// =======================
+
 let gCount = 0;
-let gTimer;
+let gTimer = null;
 
 document.addEventListener("keydown", e => {
   if (e.key.toLowerCase() !== "g") return;
@@ -62,12 +118,15 @@ document.addEventListener("keydown", e => {
 
 function reveal() {
   if (!currentWinner) {
-    alert("Kein eindeutiger Gewinner.");
+    alert("Kein eindeutiger Gewinner (Gleichstand oder keine Stimmen).");
     return;
   }
-
   startCountdown();
 }
+
+// =======================
+// COUNTDOWN
+// =======================
 
 function startCountdown() {
   const screen = document.getElementById("countdown-screen");
@@ -89,31 +148,45 @@ function startCountdown() {
   }, 1000);
 }
 
+// =======================
+// WINNER SCREEN
+// =======================
+
 function showWinner() {
-  document.querySelectorAll(".video-box").forEach(v => v.classList.remove("winner"));
+  document.querySelectorAll(".video-box").forEach(v =>
+    v.classList.remove("winner")
+  );
 
   const box = document.getElementById("video-" + currentWinner);
   box.classList.add("winner");
 
-  const src = box.querySelector("video source").src;
+  const src = box.querySelector("video source")?.src;
   const wv = document.getElementById("winner-video");
-  wv.src = src;
-  wv.load();
+
+  if (src) {
+    wv.src = src;
+    wv.load();
+  }
 
   document.getElementById("winner-screen").style.display = "flex";
 }
 
-function closeWinner() {
+window.closeWinner = function () {
   document.getElementById("winner-screen").style.display = "none";
-}
+};
 
-// Reset: R R
+// =======================
+// RESET: R R (nur lokal)
+// =======================
+
 let lastR = 0;
+
 document.addEventListener("keydown", e => {
   if (e.key.toLowerCase() === "r") {
     const now = Date.now();
     if (now - lastR < 400) {
-      localStorage.clear();
+      localStorage.removeItem("hasVoted");
+      hasVoted = false;
       location.reload();
     }
     lastR = now;
