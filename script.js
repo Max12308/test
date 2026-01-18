@@ -18,49 +18,52 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Struktur:
-// clipVoting/versprecher/round
-// clipVoting/versprecher/votes
+// =======================
+// FIREBASE PFADE
+// =======================
+
 const basePath = "clipVoting/versprecher";
-const votesRef = ref(db, `${basePath}/votes`);
-const roundRef = ref(db, `${basePath}/round`);
+const votesRef  = ref(db, `${basePath}/votes`);
+const roundRef  = ref(db, `${basePath}/round`);
+const revealRef = ref(db, `${basePath}/revealAt`);
 
 // =======================
-// STATE (ROBUST)
+// STATE
 // =======================
 
-// Firebase-State
 let votes = { 1: 0, 2: 0, 3: 0 };
 let currentRound = 0;
+let currentWinner = null;
 
-// Local State
+// lokal (pro Gerät)
 let lastVotedRound = Number(localStorage.getItem("lastVotedRound"));
 if (Number.isNaN(lastVotedRound)) lastVotedRound = -1;
 
-// WICHTIG: default = true (sicher), wird gleich korrekt gesetzt
+// sicherer Default
 let hasVoted = true;
-
-let currentWinner = null;
 
 // =======================
 // LIVE UPDATES
 // =======================
 
-// 🔁 Votes
-onValue(votesRef, snapshot => {
-  votes = snapshot.val() || { 1: 0, 2: 0, 3: 0 };
+// Stimmen
+onValue(votesRef, snap => {
+  votes = snap.val() || { 1: 0, 2: 0, 3: 0 };
   updateUI();
 });
 
-// 🔁 Runde (entscheidend!)
-onValue(roundRef, snapshot => {
-  currentRound = snapshot.val() ?? 0;
-
-  // 🔒 ZENTRALE LOGIK:
-  // Wenn ich in dieser Runde schon gevotet habe → gesperrt
+// Runde (entscheidend für Sperre)
+onValue(roundRef, snap => {
+  currentRound = snap.val() ?? 0;
   hasVoted = (lastVotedRound === currentRound);
-
   updateUI();
+});
+
+// GLOBALER COUNTDOWN
+onValue(revealRef, snap => {
+  const revealAt = snap.val();
+  if (!revealAt) return;
+  startGlobalCountdown(revealAt);
 });
 
 // =======================
@@ -79,8 +82,7 @@ function vote(video) {
   hasVoted = true;
   lastVotedRound = currentRound;
   localStorage.setItem("lastVotedRound", String(currentRound));
-
-  updateUI(); // sofort sperren
+  updateUI();
 }
 
 // =======================
@@ -116,11 +118,11 @@ function calculateWinner() {
   if (votes[2] === max) winners.push(2);
   if (votes[3] === max) winners.push(3);
 
-  currentWinner = winners.length === 1 ? winners[0] : null;
+  currentWinner = (winners.length === 1) ? winners[0] : null;
 }
 
 // =======================
-// REVEAL: G G G
+// REVEAL (G G G) → GLOBAL
 // =======================
 
 let gCount = 0;
@@ -144,31 +146,36 @@ function reveal() {
     alert("Kein eindeutiger Gewinner (Gleichstand oder keine Stimmen).");
     return;
   }
-  startCountdown();
+
+  // ⏱ globaler Countdown (3 Sekunden)
+  set(revealRef, Date.now() + 3000);
 }
 
 // =======================
-// COUNTDOWN
+// GLOBALER COUNTDOWN
 // =======================
 
-function startCountdown() {
+function startGlobalCountdown(revealAt) {
   const screen = document.getElementById("countdown-screen");
   const num = document.getElementById("countdown-number");
 
-  screen.style.display = "flex";
-  let c = 3;
-  num.textContent = c;
+  function tick() {
+    const diff = Math.ceil((revealAt - Date.now()) / 1000);
 
-  const i = setInterval(() => {
-    c--;
-    if (c > 0) {
-      num.textContent = c;
+    if (diff > 0) {
+      screen.style.display = "flex";
+      num.textContent = diff;
+      requestAnimationFrame(tick);
     } else {
-      clearInterval(i);
       screen.style.display = "none";
       showWinner();
+
+      // nur einmal auslösen
+      set(revealRef, null);
     }
-  }, 1000);
+  }
+
+  tick();
 }
 
 // =======================
@@ -179,6 +186,8 @@ function showWinner() {
   document.querySelectorAll(".video-box").forEach(v =>
     v.classList.remove("winner")
   );
+
+  if (!currentWinner) return;
 
   const box = document.getElementById("video-" + currentWinner);
   box.classList.add("winner");
@@ -199,7 +208,7 @@ window.closeWinner = () => {
 };
 
 // =======================
-// ADMIN RESET (GLOBAL): R R
+// ADMIN RESET (R R) → NEUE RUNDE
 // =======================
 
 let lastR = 0;
@@ -209,11 +218,10 @@ document.addEventListener("keydown", e => {
     const now = Date.now();
 
     if (now - lastR < 400) {
-
-      // 🔄 neue Runde
+      // neue Runde
       set(roundRef, currentRound + 1);
 
-      // 🔄 Stimmen zurücksetzen
+      // Stimmen zurücksetzen
       set(votesRef, { 1: 0, 2: 0, 3: 0 });
 
       alert("Neue Voting-Runde gestartet.");
