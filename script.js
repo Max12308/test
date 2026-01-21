@@ -36,7 +36,7 @@ let votes = { 1: 0, 2: 0, 3: 0 };
 let currentRound = 0;
 let currentWinner = null;
 let serverOffset = 0;
-const MIN_VOTES_REQUIRED = 3;
+const MIN_VOTES_REQUIRED = 2;
 
 // lokaler Zustand (pro Gerät)
 let lastVotedRound = Number(localStorage.getItem("lastVotedRound"));
@@ -254,5 +254,6 @@ document.querySelectorAll("[data-vote]").forEach(btn => {
     vote(parseInt(btn.dataset.vote));
   });
 });
+
 
 
