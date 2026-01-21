@@ -125,8 +125,14 @@ function calculateWinner() {
   if (votes[2] === max) winners.push(2);
   if (votes[3] === max) winners.push(3);
 
-  currentWinner = (winners.length === 1) ? winners[0] : null;
+if (winners.length === 1) {
+  currentWinner = winners[0];
+  showStatus(`🏆 Führend: Video ${currentWinner}`);
+} else {
+  currentWinner = null;
+  showStatus("🤝 Gleichstand – kein eindeutiger Gewinner");
 }
+
 
 // =======================
 // REVEAL: G G G → GLOBAL
@@ -254,6 +260,7 @@ document.querySelectorAll("[data-vote]").forEach(btn => {
     vote(parseInt(btn.dataset.vote));
   });
 });
+
 
 
 
