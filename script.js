@@ -31,37 +31,38 @@ const revealRef = ref(db, `${basePath}/revealAt`);
 // STATE
 // =======================
 
+// globale Daten
 let votes = { 1: 0, 2: 0, 3: 0 };
 let currentRound = 0;
 let currentWinner = null;
 
-// lokal (pro Gerät)
+// lokaler Zustand (pro Gerät)
 let lastVotedRound = Number(localStorage.getItem("lastVotedRound"));
 if (Number.isNaN(lastVotedRound)) lastVotedRound = -1;
 
-// sicherer Default
+// sicherer Default: gesperrt, wird durch Firebase gesetzt
 let hasVoted = true;
 
 // =======================
 // LIVE UPDATES
 // =======================
 
-// Stimmen
-onValue(votesRef, snap => {
-  votes = snap.val() || { 1: 0, 2: 0, 3: 0 };
+// Stimmen (live)
+onValue(votesRef, snapshot => {
+  votes = snapshot.val() || { 1: 0, 2: 0, 3: 0 };
   updateUI();
 });
 
 // Runde (entscheidend für Sperre)
-onValue(roundRef, snap => {
-  currentRound = snap.val() ?? 0;
+onValue(roundRef, snapshot => {
+  currentRound = snapshot.val() ?? 0;
   hasVoted = (lastVotedRound === currentRound);
   updateUI();
 });
 
-// GLOBALER COUNTDOWN
-onValue(revealRef, snap => {
-  const revealAt = snap.val();
+// GLOBALER COUNTDOWN (für alle)
+onValue(revealRef, snapshot => {
+  const revealAt = snapshot.val();
   if (!revealAt) return;
   startGlobalCountdown(revealAt);
 });
@@ -82,7 +83,8 @@ function vote(video) {
   hasVoted = true;
   lastVotedRound = currentRound;
   localStorage.setItem("lastVotedRound", String(currentRound));
-  updateUI();
+
+  updateUI(); // sofort sperren
 }
 
 // =======================
@@ -122,7 +124,7 @@ function calculateWinner() {
 }
 
 // =======================
-// REVEAL (G G G) → GLOBAL
+// REVEAL: G G G → GLOBAL
 // =======================
 
 let gCount = 0;
@@ -147,7 +149,7 @@ function reveal() {
     return;
   }
 
-  // ⏱ globaler Countdown (3 Sekunden)
+  // ⏱ globaler Countdown: 3 Sekunden
   set(revealRef, Date.now() + 3000);
 }
 
@@ -170,7 +172,7 @@ function startGlobalCountdown(revealAt) {
       screen.style.display = "none";
       showWinner();
 
-      // nur einmal auslösen
+      // Countdown nur einmal auslösen
       set(revealRef, null);
     }
   }
@@ -218,7 +220,7 @@ document.addEventListener("keydown", e => {
     const now = Date.now();
 
     if (now - lastR < 400) {
-      // neue Runde
+      // neue Runde starten
       set(roundRef, currentRound + 1);
 
       // Stimmen zurücksetzen
