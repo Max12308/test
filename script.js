@@ -117,6 +117,7 @@ function calculateWinner() {
 
   if (max === 0) {
     currentWinner = null;
+    showStatus("Noch keine Stimmen abgegeben.");
     return;
   }
 
@@ -125,17 +126,19 @@ function calculateWinner() {
   if (votes[2] === max) winners.push(2);
   if (votes[3] === max) winners.push(3);
 
-if (winners.length === 1) {
-  currentWinner = winners[0];
-  showStatus(`🏆 Führend: Video ${currentWinner}`);
-} else {
-  currentWinner = null;
-  showStatus("🤝 Gleichstand – kein eindeutiger Gewinner");
+  if (winners.length === 1) {
+    currentWinner = winners[0];
+    showStatus(`🏆 Führend: Video ${currentWinner}`);
+  } else {
+    currentWinner = null;
+    showStatus("🤝 Gleichstand – kein eindeutiger Gewinner");
+  }
 }
 function showStatus(text) {
   const el = document.getElementById("status-text");
   if (el) el.textContent = text;
 }
+
 
 
 // =======================
@@ -264,6 +267,7 @@ document.querySelectorAll("[data-vote]").forEach(btn => {
     vote(parseInt(btn.dataset.vote));
   });
 });
+
 
 
 
