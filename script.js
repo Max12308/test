@@ -112,7 +112,12 @@ function updateUI() {
 // WINNER LOGIK
 // =======================
 
-function calculateWinner() {
+function calculateWinner() { 
+  // alte Führungs-Markierungen entfernen
+  document.querySelectorAll(".video-box").forEach(v =>
+    v.classList.remove("leading")
+  );
+
   const max = Math.max(votes[1], votes[2], votes[3]);
 
   if (max === 0) {
@@ -126,9 +131,13 @@ function calculateWinner() {
   if (votes[2] === max) winners.push(2);
   if (votes[3] === max) winners.push(3);
 
-  if (winners.length === 1) {
-    currentWinner = winners[0];
-    showStatus(`🏆 Führend: Video ${currentWinner}`);
+if (winners.length === 1) {
+  currentWinner = winners[0];
+  showStatus(`🏆 Führend: Video ${currentWinner}`);
+
+  const leadingBox = document.getElementById("video-" + currentWinner);
+  if (leadingBox) leadingBox.classList.add("leading");
+
   } else {
     currentWinner = null;
     showStatus("🤝 Gleichstand – kein eindeutiger Gewinner");
@@ -267,6 +276,7 @@ document.querySelectorAll("[data-vote]").forEach(btn => {
     vote(parseInt(btn.dataset.vote));
   });
 });
+
 
 
 
