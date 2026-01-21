@@ -36,6 +36,7 @@ let votes = { 1: 0, 2: 0, 3: 0 };
 let currentRound = 0;
 let currentWinner = null;
 let serverOffset = 0;
+const MIN_VOTES_REQUIRED = 3;
 
 // lokaler Zustand (pro Gerät)
 let lastVotedRound = Number(localStorage.getItem("lastVotedRound"));
@@ -146,16 +147,22 @@ document.addEventListener("keydown", e => {
     reveal();
   }
 });
-
 function reveal() {
-  if (!currentWinner) {
-    alert("Kein eindeutiger Gewinner (Gleichstand oder keine Stimmen).");
+  const totalVotes = votes[1] + votes[2] + votes[3];
+
+  if (totalVotes < MIN_VOTES_REQUIRED) {
+    alert(`Mindestens ${MIN_VOTES_REQUIRED} Stimmen erforderlich.`);
     return;
   }
 
-  // ⏱ globaler Countdown: 3 Sekunden
+  if (!currentWinner) {
+    alert("Kein eindeutiger Gewinner (Gleichstand).");
+    return;
+  }
+
   set(revealRef, Date.now() + 3000);
 }
+
 
 // =======================
 // GLOBALER COUNTDOWN
@@ -247,4 +254,5 @@ document.querySelectorAll("[data-vote]").forEach(btn => {
     vote(parseInt(btn.dataset.vote));
   });
 });
+
 
