@@ -35,6 +35,7 @@ const revealRef = ref(db, `${basePath}/revealAt`);
 let votes = { 1: 0, 2: 0, 3: 0 };
 let currentRound = 0;
 let currentWinner = null;
+let serverOffset = 0;
 
 // lokaler Zustand (pro Gerät)
 let lastVotedRound = Number(localStorage.getItem("lastVotedRound"));
@@ -65,6 +66,9 @@ onValue(revealRef, snapshot => {
   const revealAt = snapshot.val();
   if (!revealAt) return;
   startGlobalCountdown(revealAt);
+});
+onValue(ref(db, ".info/serverTimeOffset"), snapshot => {
+  serverOffset = snapshot.val() || 0;
 });
 
 // =======================
@@ -162,7 +166,8 @@ function startGlobalCountdown(revealAt) {
   const num = document.getElementById("countdown-number");
 
   function tick() {
-    const diff = Math.ceil((revealAt - Date.now()) / 1000);
+    const serverNow = Date.now() + serverOffset;
+    const diff = Math.ceil((revealAt - serverNow) / 1000);
 
     if (diff > 0) {
       screen.style.display = "flex";
@@ -242,3 +247,4 @@ document.querySelectorAll("[data-vote]").forEach(btn => {
     vote(parseInt(btn.dataset.vote));
   });
 });
+
