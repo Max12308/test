@@ -95,3 +95,14 @@ button:disabled {
   border: 5px solid gold;
   box-shadow: 0 0 40px gold;
 }
+.video-box.winner {
+  border: 4px solid gold;
+  box-shadow: 0 0 25px gold;
+  transform: scale(1.03);
+}
+
+.video-box.leading {
+  border: 3px solid #ffd700;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+}
+
