@@ -132,6 +132,10 @@ if (winners.length === 1) {
   currentWinner = null;
   showStatus("🤝 Gleichstand – kein eindeutiger Gewinner");
 }
+function showStatus(text) {
+  const el = document.getElementById("status-text");
+  if (el) el.textContent = text;
+}
 
 
 // =======================
@@ -260,6 +264,7 @@ document.querySelectorAll("[data-vote]").forEach(btn => {
     vote(parseInt(btn.dataset.vote));
   });
 });
+
 
 
 
